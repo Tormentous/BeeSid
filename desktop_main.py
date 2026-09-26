@@ -1,4 +1,4 @@
-"""Executable entry point for building the Rapier desktop app."""
+"""Executable entry point for building the Bee Sid desktop app."""
 
 from rapier.desktop import Main
 

@@ -11,4 +11,5 @@ build/
 dist/
 *.spec
 results/latest/
+results/.*.partial/
 fxreplay_work/

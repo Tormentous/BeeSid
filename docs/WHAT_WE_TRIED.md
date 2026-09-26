@@ -1,5 +1,23 @@
 # What we already tried, and what happened
 
+## 2026-09-26: the desktop app is Bee Sid again
+- Rapier Desk was renamed **Bee Sid** (window, logo, `BeeSid.exe`, data folder), and his picture is now the icon and splash. The logo letters use his own yellow and black.
+- The engine keeps the Rapier name: renaming the package, CLI, `RAPIER_*` settings or order IDs would break live-order de-duplication across restarts and the real-orders switch.
+- At 16–24 px his whole picture is unreadable, so the `.ico` uses a head-only crop at those sizes and his full picture from 32 px up. A white outline keeps him visible on dark taskbars.
+- Runs saved by earlier test builds (in a `RapierDesk` folder) are moved to the `BeeSid` folder on first start.
+
+## 2026-09-26: game-style look for Rapier Desk
+- The first design (sidebar with a list of runs next to a content pane) looked like a chat app. It was replaced with a Coolbrador game layout: a header with coloured tabs, a starry hero with Bee Sid, save-slot run cards, a leaderboard, and a speech bubble for run status. The equity chart is now drawn in the app; the report's full matplotlib chart is still one click away.
+- Qt stylesheet findings: a `font-size` in the app stylesheet overrides fonts set in code, so all fonts are set in code; and a `QWidget { background: … }` rule also paints every plain container over custom-drawn panels, so window colours come from the app palette instead.
+- A clickable `QFrame` only receives the mouse release (its click) if it accepts the press; otherwise clicks on its labels go to the parent.
+
+## 2026-09-26: one-file desktop app (RapierDesk.exe)
+- Rapier Desk now builds as a single file with the Bee Sid icon, about 140 MB. On the Linux test machine the window appeared about 4.5 s after launch, because a one-file app unpacks itself on every start; a splash covers the wait.
+- That unpack folder is deleted on exit, so the packaged app keeps runs and the market-data cache in the user's data folder instead.
+- Clicking through the packaged app found two packaging gaps unit tests could not: pandas loads `tabulate` lazily (so it was not bundled), and `tabulate` 0.10 reads its version from package metadata (also not bundled). Every packaged backtest failed at `summary.md` until both were added. The build's self-test now runs the engine and report writer inside the packaged app, so CI catches this on Windows too.
+- Runs are written to a hidden `.partial` folder and moved into place only when complete, so a failed run no longer leaves a half-written saved run.
+- Saved-run folder names are unchanged (CLI paths and these docs still work); only the app shows readable names.
+
 ## 2026-09-26: Windows token-file permissions
 - Windows does not implement POSIX `chmod(600)` for NTFS ACLs; saving Tradara tokens now restricts the DACL to the current user and SYSTEM before writing, and CI checks the resulting ACL. Unix retains mode 0600.
 

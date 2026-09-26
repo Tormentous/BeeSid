@@ -3,7 +3,8 @@
 Read `START_HERE.md` first; it's the map. This file lists only the rules and the fast paths.
 
 ## Fast facts
-- Python 3.11+ package in `rapier/`. Install with `pip install -e ".[dev]"`. Test with `pytest` (47 tests, ~20 s).
+- Python 3.11+ package in `rapier/`. Install with `pip install -e ".[dev]"`. Test with `pytest` (61 tests, ~20 s).
+- The desktop app is called **Bee Sid** (the owner's original name). The engine package, the `rapier` CLI, `RAPIER_*` settings and order IDs stay "rapier" on purpose: live-order de-duplication and the real-orders switch depend on them.
 - Settings live in `rapier/rapier_config.json`. Tests use synthetic data, so they don't need the `data/` cache.
 - Backtests need the `data/` cache (git-ignored). Use `--cached` to avoid network calls.
 - Each `results/<name>/` folder holds `summary.md` (read this), `summary.json`, `trades.csv` and `equity.png`.
