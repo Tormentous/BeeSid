@@ -1,5 +1,12 @@
 # What we already tried, and what happened
 
+## 2026-09-26: one-file desktop app (RapierDesk.exe)
+- Rapier Desk now builds as a single file with the Bee Sid icon, about 140 MB. On the Linux test machine the window appeared about 4.5 s after launch, because a one-file app unpacks itself on every start; a splash covers the wait.
+- That unpack folder is deleted on exit, so the packaged app keeps runs and the market-data cache in the user's data folder instead.
+- Clicking through the packaged app found two packaging gaps unit tests could not: pandas loads `tabulate` lazily (so it was not bundled), and `tabulate` 0.10 reads its version from package metadata (also not bundled). Every packaged backtest failed at `summary.md` until both were added. The build's self-test now runs the engine and report writer inside the packaged app, so CI catches this on Windows too.
+- Runs are written to a hidden `.partial` folder and moved into place only when complete, so a failed run no longer leaves a half-written saved run.
+- Saved-run folder names are unchanged (CLI paths and these docs still work); only the app shows readable names.
+
 ## 2026-09-26: Windows token-file permissions
 - Windows does not implement POSIX `chmod(600)` for NTFS ACLs; saving Tradara tokens now restricts the DACL to the current user and SYSTEM before writing, and CI checks the resulting ACL. Unix retains mode 0600.
 

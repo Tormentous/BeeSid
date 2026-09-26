@@ -1,4 +1,4 @@
-# Build portable desktop folders on each operating system, without trading credentials.
+# Build the one-file desktop app (RapierDesk.exe on Windows) on each OS and prove it starts; no trading credentials.
 name: Desktop builds
 
 on:
@@ -23,16 +23,17 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libegl1 libopengl0 libxkbcommon-x11-0 libxcb-cursor0 libxcb-image0 libxcb-keysyms1 libxcb-icccm4 libxcb-render-util0 libxcb-util1 libxcb-xkb1
       - name: Install dependencies
-        run: python -m pip install ".[dev,desktop]" pyinstaller
+        run: python -m pip install ".[dev,desktop]" "pyinstaller>=6.10,<7"
       - name: Test
         run: python -m pytest -q
-      - name: Build desktop folder
-        run: python -m PyInstaller --noconfirm --windowed --onedir --name RapierDesk --collect-data rapier --collect-submodules rapier desktop_main.py
-      - name: Include example reports
-        run: python -c "import shutil; shutil.copytree('results', 'dist/RapierDesk/results', ignore=shutil.ignore_patterns('latest'))"
+        env:
+          QT_QPA_PLATFORM: offscreen
+      - name: Build and self-test the app
+        run: python tools/build_desktop.py
+        timeout-minutes: 20
       - name: Upload desktop download
         uses: actions/upload-artifact@v4
         with:
           name: RapierDesk-${{ runner.os }}
-          path: dist/RapierDesk/
+          path: dist/RapierDesk*
           if-no-files-found: error

@@ -1,49 +1,40 @@
 # Prop Firm Rapier
 
-## Desktop dashboard (Windows and Linux)
+## Desktop app: Rapier Desk (Windows and Linux)
 
-Rapier Desk is a native, offline-first research cockpit: browse saved backtests, inspect
-equity, goals and recent trades, and start a new backtest without writing prompts or CLI
-commands. **It does not expose live trading or account access.** The existing two-switch
-live-order safeguard remains CLI-only.
+Rapier Desk is a double-click app for browsing saved backtests (equity, goal check, recent trades) and
+running new ones without prompts or commands. **It has no live-trading or account features**; the
+two-switch live-order safeguard stays CLI-only.
 
-Install Python 3.11+ on your machine, then from this repository:
+**Get it.** On GitHub open **Actions → Desktop builds**, pick a green run on `main`, and download
+`RapierDesk-Windows` or `RapierDesk-Linux`. GitHub wraps downloads in a zip; inside is one file.
+
+- **Windows:** `RapierDesk.exe`. Double-click it. It is unsigned, so SmartScreen may ask first
+  (**More info → Run anyway**).
+- **Linux:** `RapierDesk`. Run `chmod +x RapierDesk` once (zip downloads drop the executable bit), then
+  open it. It is built on Ubuntu 24.04; on older distributions build it yourself (below).
+
+The app unpacks itself every time it starts, so a Bee Sid splash shows for a few seconds first.
+
+**Saved runs.** The example runs are built in and shown with readable names. Give a new backtest a name
+(capitals and spaces are fine) to keep it; leave the name blank to replace **Latest Run**. Your runs and
+the market-data cache live in `%LOCALAPPDATA%\RapierDesk` (Windows) or `~/.local/share/RapierDesk`
+(Linux); **Open runs folder** jumps there. To reuse market data you already downloaded with the CLI,
+copy the files from the repository's `data/` folder into that `data` folder.
+
+**Run from source or build the app yourself** (Python 3.11+, from the repository root):
 
 ```bash
 python -m pip install -e ".[desktop]"
-rapier-desktop
+rapier-desktop                      # from source: runs are saved in results/
+python -m pip install "pyinstaller>=6.10,<7"
+python tools/build_desktop.py       # -> dist/RapierDesk.exe on Windows, dist/RapierDesk on Linux
 ```
 
-On Windows use `py -m pip install -e ".[desktop]"` and `rapier-desktop` from the
-same terminal/virtual environment. On Linux a Qt-capable graphical session is needed
-(not a headless server); if Qt reports a missing EGL library on Ubuntu, install
-`libegl1` and `libopengl0`. Saved reports in `results/` load without any data download.
-The backtest page defaults to **local cache only**; uncheck this if you want to fetch
-Yahoo data. The ignored `data/` directory is not included in Git; cached-only runs
-need local history first. The new run is written to `results/latest/`. Other named
-reports are left alone. Keep this project in a writable folder so new reports and
-market-data caches can be saved.
-
-To create a portable app folder on the **same OS** where it will run, install
-`pyinstaller` and build locally:
-
-```bash
-python -m pip install pyinstaller
-pyinstaller --noconfirm --windowed --onedir --name RapierDesk --collect-data rapier --collect-submodules rapier desktop_main.py
-```
-
-Copy the `results/` folder next to `dist/RapierDesk/RapierDesk` (or `RapierDesk.exe`
-on Windows) to include the example reports. Launch from that writable folder. Builds
-are OS-specific; a Linux build does not produce a Windows executable. A packaged app
-stores its local data alongside its bundled Python engine; use the pip install for
-ongoing development and reliable cache management.
-
-For ready-to-download Windows and Linux builds, open **Actions → Desktop builds** on
-this repository, run the workflow (or use a successful main-branch build), and download
-the `RapierDesk-Windows` or `RapierDesk-Linux` artifact. Extract the complete folder in
-a writable location before opening the app; the sample reports are included. Windows
-may show a warning for an unsigned app. Do not enter credentials into an unverified
-download.
+A build only runs on the kind of system it was made on (a Linux build is not a Windows `.exe`). The
+build script packs the example runs, adds the splash when `tkinter` is available, and finishes with a
+self-test that opens the app and runs the engine on made-up bars. On Ubuntu, Qt may also need
+`libegl1` and `libopengl0`.
 
 > **New here (person or AI)? Read [`START_HERE.md`](START_HERE.md) first:** a 5-minute map of the project, its status and next steps.
 
