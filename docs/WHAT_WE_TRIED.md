@@ -1,5 +1,8 @@
 # What we already tried, and what happened
 
+## 2026-09-26: Windows token-file permissions
+- Windows does not implement POSIX `chmod(600)` for NTFS ACLs; saving Tradara tokens now restricts the DACL to the current user and SYSTEM before writing, and CI checks the resulting ACL. Unix retains mode 0600.
+
 ## 2026-09-26: desktop research cockpit
 - Added a native Windows/Linux Qt dashboard for existing reports and manual backtest runs; no live-order controls were added.
 - Sample reports load without the ignored market-data cache. Fresh cached-only backtests still need that cache; historical short-interval data is not bundled.

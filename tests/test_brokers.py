@@ -1,5 +1,7 @@
 """Checks the broker adapters with fake APIs: Tradara order payloads, token refresh, account allowlist, IBKR fill/amend, and IBKR roll stitching."""
 import json
+import os
+import subprocess
 import time
 
 import pandas as pd
@@ -99,7 +101,12 @@ def TestTradaraRefreshesExpiredToken(broker):
     assert any(c[0] == "POST" and c[1] == T.TOKEN_URL for c in broker.s.calls)
     saved = json.loads(broker.token_file.read_text())
     assert saved["access_token"] == "new" and saved["refresh_token"] == "r2"
-    assert oct(broker.token_file.stat().st_mode & 0o777) == "0o600"
+    if os.name == "nt":
+        acl = subprocess.run(["icacls", str(broker.token_file)], check=True,
+                             capture_output=True, text=True).stdout
+        assert acl.count("(F)") == 2 and "(I)" not in acl
+    else:
+        assert oct(broker.token_file.stat().st_mode & 0o777) == "0o600"
 
 
 def TestPkceAndAuthorizeUrl():

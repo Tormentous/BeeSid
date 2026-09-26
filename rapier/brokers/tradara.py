@@ -18,11 +18,14 @@ User-Agent; refresh tokens have been seen to die with HTTP 401, which is why
 from __future__ import annotations
 
 import base64
+import csv
 import hashlib
 import json
 import logging
 import os
+import re
 import secrets
+import subprocess
 import time
 import urllib.parse
 from pathlib import Path
@@ -231,6 +234,37 @@ class TradaraBroker:
 
 
 # ------------------------------------------------------------------ login
+def _RestrictTokenFile(path: Path) -> None:
+    if os.name != "nt":
+        os.chmod(path, 0o600)
+        return
+
+    import ctypes
+    from ctypes import wintypes
+
+    identity = subprocess.run(["whoami", "/user", "/fo", "csv", "/nh"],
+                              check=True, capture_output=True, text=True).stdout
+    sid = next(csv.reader(identity.splitlines()))[1]
+    if not re.fullmatch(r"S-1-(?:\d+-)+\d+", sid):
+        raise OSError("Could not identify the Windows user for the token file")
+    descriptor = wintypes.LPVOID()
+    advapi = ctypes.windll.advapi32
+    advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.argtypes = (
+        wintypes.LPCWSTR, wintypes.DWORD, ctypes.POINTER(wintypes.LPVOID), wintypes.LPVOID)
+    advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW.restype = wintypes.BOOL
+    advapi.SetFileSecurityW.argtypes = (wintypes.LPCWSTR, wintypes.DWORD, wintypes.LPVOID)
+    advapi.SetFileSecurityW.restype = wintypes.BOOL
+    sddl = f"D:P(A;;FA;;;{sid})(A;;FA;;;SY)"
+    if not advapi.ConvertStringSecurityDescriptorToSecurityDescriptorW(sddl, 1,
+                                                                       ctypes.byref(descriptor), None):
+        raise ctypes.WinError()
+    try:
+        if not advapi.SetFileSecurityW(str(path), 4, descriptor):
+            raise ctypes.WinError()
+    finally:
+        ctypes.windll.kernel32.LocalFree(descriptor)
+
+
 def SaveTokens(path: Path, body: dict, prev: dict | None = None) -> None:
     prev = prev or {}
     out = {"access_token": body["access_token"],
@@ -238,8 +272,9 @@ def SaveTokens(path: Path, body: dict, prev: dict | None = None) -> None:
            "expires_in": body.get("expires_in", 3600), "token_type": body.get("token_type", "Bearer"),
            "scope": body.get("scope", prev.get("scope")), "obtained_at": time.time()}
     path.parent.mkdir(parents=True, exist_ok=True)
+    path.touch(exist_ok=True)
+    _RestrictTokenFile(path)
     path.write_text(json.dumps(out, indent=1))
-    os.chmod(path, 0o600)
 
 
 def PkcePair() -> tuple[str, str]:
