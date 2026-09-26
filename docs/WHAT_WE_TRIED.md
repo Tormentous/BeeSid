@@ -1,5 +1,10 @@
 # What we already tried, and what happened
 
+## 2026-09-26: game-style look for Rapier Desk
+- The first design (sidebar with a list of runs next to a content pane) looked like a chat app. It was replaced with a Coolbrador game layout: a header with coloured tabs, a starry hero with Bee Sid, save-slot run cards, a leaderboard, and a speech bubble for run status. The equity chart is now drawn in the app; the report's full matplotlib chart is still one click away.
+- Qt stylesheet findings: a `font-size` in the app stylesheet overrides fonts set in code, so all fonts are set in code; and a `QWidget { background: … }` rule also paints every plain container over custom-drawn panels, so window colours come from the app palette instead.
+- A clickable `QFrame` only receives the mouse release (its click) if it accepts the press; otherwise clicks on its labels go to the parent.
+
 ## 2026-09-26: one-file desktop app (RapierDesk.exe)
 - Rapier Desk now builds as a single file with the Bee Sid icon, about 140 MB. On the Linux test machine the window appeared about 4.5 s after launch, because a one-file app unpacks itself on every start; a splash covers the wait.
 - That unpack folder is deleted on exit, so the packaged app keeps runs and the market-data cache in the user's data folder instead.

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 import re
 import shutil
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 LATEST = "latest"
@@ -86,6 +87,50 @@ def RunFolder(name: str) -> str:
     if not clean or clean.casefold() in (LATEST, "latest run"):
         return LATEST
     return f"{clean} Run" if clean.split(".")[0].upper() in _RESERVED else clean
+
+
+def Money(value: float, sign: bool = False) -> str:
+    """Whole dollars: -$366, or +$3,048 when `sign` is set."""
+    whole = round(value)
+    amount = f"${abs(whole):,}"
+    if whole < 0:
+        return "-" + amount
+    return ("+" if sign and whole > 0 else "") + amount
+
+
+def GoalScore(goals: dict) -> tuple[int, int]:
+    return sum(bool(met) for met in goals.values()), len(goals)
+
+
+def GoalLabel(goal: str) -> str:
+    text = goal.replace(">=", "≥").replace("<=", "≤")
+    return text[:1].upper() + text[1:]
+
+
+def NiceStep(span: float, ticks: int = 4) -> float:
+    """Round axis step (1, 2, 2.5 or 5 times a power of ten) giving the gridline count closest to `ticks`."""
+    magnitude = 10 ** math.floor(math.log10(span / ticks))
+    steps = [f * magnitude * scale for scale in (1, 10) for f in (1, 2, 2.5, 5)]
+    return min(steps, key=lambda step: abs(span / step - ticks))
+
+
+def EquityCurve(trades: list[dict]) -> list[tuple[str, float, float]]:
+    """Closed-trade equity after costs as (exit day, trade P&L, running total), in exit order."""
+    rows = []
+    for trade in trades:
+        try:
+            rows.append((trade.get("exit_time") or trade.get("entry_time") or "", float(trade.get("pnl") or 0)))
+        except ValueError:
+            continue
+    try:
+        rows.sort(key=lambda row: datetime.fromisoformat(row[0]))
+    except (ValueError, TypeError):
+        pass  # keep file order if any time is missing or unreadable
+    curve, total = [], 0.0
+    for stamp, pnl in rows:
+        total += pnl
+        curve.append((stamp[:10], pnl, total))
+    return curve
 
 
 def Staging(out: Path) -> Path:

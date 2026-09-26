@@ -63,7 +63,7 @@ rapier/                <- THE BOT (Python package)
   cli.py               the `rapier ...` commands
   desktop.py           the Rapier Desk app window (Windows/Linux): saved runs, charts, new backtests
   desktop_data.py      finds saved runs, gives them readable names, checks backtest settings
-  assets/              app icon, splash and checkbox tick (Bee Sid)
+  assets/              Bee Sid art, app icon, splash, the Cantarell font (SIL OFL) and small UI images
   feeds/ibkr.py        price data from Interactive Brokers (read-only connection)
   brokers/base.py      what every broker must support, plus a fake broker and a simulator
   brokers/tradara.py   sends orders to Tradara (the owner's prop-firm terminal)
@@ -82,7 +82,7 @@ data/                  <- price cache. NOT in git (see section 5)
 ```bash
 python -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"            # add ,ibkr for the Interactive Brokers parts
-pytest                             # should say 57 passed (the desktop tests skip without PySide6)
+pytest                             # should say 60 passed (the desktop tests skip without PySide6)
 rapier fetch                       # download price bars from Yahoo into data/
 rapier backtest --base 1h --start 2025-07-26 --out results/my_run   # main backtest
 rapier backtest --base 1m --start 2026-08-24 --cached              # all books, needs 1m data

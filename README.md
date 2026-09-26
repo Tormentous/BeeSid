@@ -6,6 +6,11 @@ Rapier Desk is a double-click app for browsing saved backtests (equity, goal che
 running new ones without prompts or commands. **It has no live-trading or account features**; the
 two-switch live-order safeguard stays CLI-only.
 
+It is styled like Coolbrador's game pages: Chipper's slanted buttons, starfields and colour-coded tabs on
+LabradorSim's France-desk navy. Saved runs are save-slot cards, the home page has a leaderboard, and Bee Sid
+talks you through a new run. The Cantarell font is bundled under the SIL Open Font License
+(`rapier/assets/fonts/OFL.txt`).
+
 **Get it.** On GitHub open **Actions → Desktop builds**, pick a green run on `main`, and download
 `RapierDesk-Windows` or `RapierDesk-Linux`. GitHub wraps downloads in a zip; inside is one file.
 

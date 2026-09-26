@@ -5,8 +5,8 @@ import os
 
 import pytest
 
-from rapier.desktop_data import (AppPaths, BacktestArgs, DisplayName, EngineCheck, LoadReports, Paths, Publish,
-                                 RunFolder, Staging)
+from rapier.desktop_data import (AppPaths, BacktestArgs, DisplayName, EngineCheck, EquityCurve, GoalLabel, GoalScore,
+                                 LoadReports, Money, NiceStep, Paths, Publish, RunFolder, Staging)
 
 HEADING = "# Prop Firm Rapier | 2025-07-26 -> today | base 1h | prop | yahoo"
 
@@ -60,6 +60,29 @@ def TestEngineCheckWritesAFullReport(tmp_path):
     assert {p.name for p in tmp_path.iterdir()} >= {"summary.json", "summary.md", "trades.csv", "equity.png"}
 
 
+def TestEquityCurveFollowsExitOrder():
+    trades = [{"exit_time": "2025-07-29 15:00:00-04:00", "pnl": "10"},
+              {"exit_time": "2025-07-29 11:00:00-04:00", "pnl": "-4"}]
+    assert EquityCurve(trades) == [("2025-07-29", -4.0, -4.0), ("2025-07-29", 10.0, 6.0)]
+    assert EquityCurve([]) == []
+
+
+def TestGoalsAndMoneyReadNicely():
+    assert GoalScore({"win rate >= 75%": False, "every trade planned >= 1R": True}) == (1, 2)
+    assert GoalLabel("win rate >= 75%") == "Win rate ≥ 75%"
+    assert Money(3048.2, True) == "+$3,048"
+    assert Money(-365.7) == "-$366"
+    assert Money(0.3, True) == "$0"
+
+
+def TestChartGridlinesUseRoundSteps():
+    # just above and just below 4 x $1,000 must both give $1,000 steps, not jump to $2,000
+    assert NiceStep(4001) == 1000
+    assert NiceStep(3999) == 1000
+    assert NiceStep(430) == 100
+    assert NiceStep(9000) == 2500
+
+
 def TestSavedRunsComeBeforeBundledSamples(tmp_path):
     WriteRun(tmp_path / "runs" / "My June Test", net=5)
     WriteRun(tmp_path / "samples" / "main_2025-07-26_to_2026-09-24")
@@ -104,7 +127,7 @@ def TestBacktestRejectsBadDatesAndOptions(tmp_path):
             BacktestArgs(*values, tmp_path / "latest")
 
 
-def TestDeskListsRunsByReadableName(tmp_path, monkeypatch):
+def TestDeskShowsRunsAsSaveSlots(tmp_path, monkeypatch):
     pytest.importorskip("PySide6")
     monkeypatch.setenv("QT_QPA_PLATFORM", os.environ.get("QT_QPA_PLATFORM", "offscreen"))
     from PySide6.QtWidgets import QApplication
@@ -114,8 +137,10 @@ def TestDeskListsRunsByReadableName(tmp_path, monkeypatch):
     WriteRun(tmp_path / "runs" / "oos_2024-06-15_to_2025-07-25")
     app = QApplication.instance() or QApplication([])
     desk = Desk(Paths(tmp_path / "runs", None, None))
-    assert desk.report_list.item(0).text() == "Out-of-Sample Test"
+    assert [card.report.title for card in desk.slot_cards] == ["Out-of-Sample Test"]
+    desk.slot_cards[0].clicked.emit()
+    assert desk.pages.currentIndex() == 2
     assert desk.report_title.text() == "Out-of-Sample Test"
-    assert desk.stats[0][0].text() == "$120"
+    assert desk.stats[0][0].text() == "+$120"
     desk.close()
     app.processEvents()
