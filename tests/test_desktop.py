@@ -13,7 +13,10 @@ def TestReportsLoadWithoutMarketData(tmp_path):
     (folder / "summary.json").write_text(json.dumps({"summary": {"net_usd": 120}, "goals": {"1R": True}}))
     (folder / "trades.csv").write_text("book,pnl\note-1h,120\n")
     (tmp_path / "results" / "broken").mkdir()
-    (tmp_path / "results" / "outside").symlink_to(folder, target_is_directory=True)
+    try:
+        (tmp_path / "results" / "outside").symlink_to(folder, target_is_directory=True)
+    except OSError:
+        pass  # Windows may not permit symlinks without Developer Mode.
     reports = LoadReports(tmp_path / "results")
     assert [r.name for r in reports] == ["saved"]
     assert reports[0].trades[0]["pnl"] == "120"
