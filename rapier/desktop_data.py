@@ -12,6 +12,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 LATEST = "latest"
+HOME, OLD_HOME = "BeeSid", "RapierDesk"  # the packaged app's data folder, now and before it was renamed Bee Sid
 _MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
 _TITLES = {"latest": "Latest Run", "main": "Main Backtest", "oos": "Out-of-Sample Test"}
 _WORDS = {"oos": "Out-of-Sample", "ibkr": "IBKR"}
@@ -45,8 +46,18 @@ def AppPaths(repo: Path, bundle: Path | None, user_data: Path) -> Paths:
     if bundle is None:
         return Paths(repo / "results", None, None)
     # A one-file exe unpacks into a temporary folder that is deleted on exit, so saved work must live elsewhere.
-    home = user_data / "RapierDesk"
+    home = user_data / HOME
     return Paths(home / "results", bundle / "results", home / "data")
+
+
+def AdoptOldHome(user_data: Path) -> None:
+    """Move runs saved before the rename (the RapierDesk folder) into the Bee Sid folder, once."""
+    old, new = user_data / OLD_HOME, user_data / HOME
+    if old.is_dir() and not new.exists():
+        try:
+            old.rename(new)
+        except OSError:
+            pass  # e.g. an older copy of the app is still open; its runs stay in the old folder
 
 
 def _Day(day: date, year: bool) -> str:
@@ -164,7 +175,7 @@ def EngineCheck(folder: Path) -> int:
                          "volume": 1000.0}, index=idx)
     book = BookConfig("ote-1h", "1h", SetupParams(k=2, min_leg_atr=1.0), bias_tfs=())
     result = Run(Market.From1h(bars), (book,), RiskConfig(flatten_eod=False, daily_loss_limit=1e9, dd_throttle=None))
-    Write(result, folder, "Rapier Desk self-test (synthetic bars)")
+    Write(result, folder, "Bee Sid self-test (synthetic bars)")
     return len(result.trades)
 
 

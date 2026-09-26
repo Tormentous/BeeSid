@@ -1,5 +1,11 @@
 # What we already tried, and what happened
 
+## 2026-09-26: the desktop app is Bee Sid again
+- Rapier Desk was renamed **Bee Sid** (window, logo, `BeeSid.exe`, data folder), and his picture is now the icon and splash. The logo letters use his own yellow and black.
+- The engine keeps the Rapier name: renaming the package, CLI, `RAPIER_*` settings or order IDs would break live-order de-duplication across restarts and the real-orders switch.
+- At 16–24 px his whole picture is unreadable, so the `.ico` uses a head-only crop at those sizes and his full picture from 32 px up. A white outline keeps him visible on dark taskbars.
+- Runs saved by earlier test builds (in a `RapierDesk` folder) are moved to the `BeeSid` folder on first start.
+
 ## 2026-09-26: game-style look for Rapier Desk
 - The first design (sidebar with a list of runs next to a content pane) looked like a chat app. It was replaced with a Coolbrador game layout: a header with coloured tabs, a starry hero with Bee Sid, save-slot run cards, a leaderboard, and a speech bubble for run status. The equity chart is now drawn in the app; the report's full matplotlib chart is still one click away.
 - Qt stylesheet findings: a `font-size` in the app stylesheet overrides fonts set in code, so all fonts are set in code; and a `QWidget { background: … }` rule also paints every plain container over custom-drawn panels, so window colours come from the app palette instead.

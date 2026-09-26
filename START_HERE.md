@@ -61,7 +61,7 @@ rapier/                <- THE BOT (Python package)
   trader.py            the live loop: new 1-minute bar -> engine -> executor -> broker
   replay.py            runs the live stack over history to prove live == backtest
   cli.py               the `rapier ...` commands
-  desktop.py           the Rapier Desk app window (Windows/Linux): saved runs, charts, new backtests
+  desktop.py           the Bee Sid desktop app (Windows/Linux): saved runs, charts, new backtests
   desktop_data.py      finds saved runs, gives them readable names, checks backtest settings
   assets/              Bee Sid art, app icon, splash, the Cantarell font (SIL OFL) and small UI images
   feeds/ibkr.py        price data from Interactive Brokers (read-only connection)
@@ -72,7 +72,8 @@ rapier/                <- THE BOT (Python package)
 tests/                 <- automated checks (run `pytest`). One file per area, same names as above
 tools/prop_income.py   <- "how much could this pay on prop accounts?" simulator
 tools/fxreplay/        <- scripts that replay Rapier's orders on fxreplay.com in a browser
-tools/build_desktop.py <- builds the one-file RapierDesk.exe (or Linux app) and self-tests it
+tools/build_desktop.py <- builds the one-file BeeSid.exe (or Linux app) and self-tests it
+tools/make_art.py      <- redraws the Bee Sid icon and splash from his picture
 results/               <- saved backtest reports. Each folder is one run
 data/                  <- price cache. NOT in git (see section 5)
 ```
@@ -82,7 +83,7 @@ data/                  <- price cache. NOT in git (see section 5)
 ```bash
 python -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"            # add ,ibkr for the Interactive Brokers parts
-pytest                             # should say 60 passed (the desktop tests skip without PySide6)
+pytest                             # should say 61 passed (the desktop tests skip without PySide6)
 rapier fetch                       # download price bars from Yahoo into data/
 rapier backtest --base 1h --start 2025-07-26 --out results/my_run   # main backtest
 rapier backtest --base 1m --start 2026-08-24 --cached              # all books, needs 1m data

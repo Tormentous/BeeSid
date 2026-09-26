@@ -1,4 +1,4 @@
-"""Rapier Desk: a game-style Windows/Linux app for saved backtests and new backtest runs (it never places orders)."""
+"""Bee Sid: the game-style Windows/Linux app for saved backtests and new backtest runs (it never places orders)."""
 
 from __future__ import annotations
 
@@ -15,15 +15,16 @@ from pathlib import Path
 
 from PySide6.QtCore import QPointF, QRectF, QSize, QStandardPaths, Qt, QThread, QUrl, Signal
 from PySide6.QtGui import (QColor, QDesktopServices, QFont, QFontDatabase, QFontMetrics, QFontMetricsF, QIcon,
-                           QLinearGradient, QPainter, QPainterPath, QPalette, QPen, QPixmap, QPolygonF,
-                           QRadialGradient, QTransform)
+                           QImageReader, QLinearGradient, QPainter, QPainterPath, QPalette, QPen, QPixmap,
+                           QPolygonF, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QComboBox, QFormLayout, QFrame, QGridLayout,
                                QHBoxLayout, QHeaderView, QLabel, QLineEdit, QMainWindow, QMessageBox, QPushButton,
                                QScrollArea, QSizePolicy, QStackedWidget, QTableWidget, QTableWidgetItem, QVBoxLayout,
                                QWidget)
 
-from .desktop_data import (LATEST, AppPaths, BacktestArgs, DisplayName, EngineCheck, EquityCurve, GoalLabel,
-                           GoalScore, LoadReports, Money, NiceStep, Paths, Publish, Report, RunFolder, Staging)
+from .desktop_data import (LATEST, AdoptOldHome, AppPaths, BacktestArgs, DisplayName, EngineCheck, EquityCurve,
+                           GoalLabel, GoalScore, LoadReports, Money, NiceStep, Paths, Publish, Report, RunFolder,
+                           Staging)
 
 ASSETS = Path(__file__).resolve().parent / "assets"
 
@@ -32,6 +33,7 @@ ASSETS = Path(__file__).resolve().parent / "assets"
 NAVY, NAVY_2, NAVY_3, BORDER, BORDER_HI = "#070d21", "#0e1634", "#18234e", "#273468", "#3a4a8f"
 WHITE, TEXT, SOFT, CREAM = "#ffffff", "#e8eefc", "#9aa6c8", "#f5edd8"
 GOLD, STAR, SILVER, BRONZE = "#e5c87d", "#ece053", "#c7ced9", "#d08a4a"
+BEE_LIGHT, BEE, BEE_DARK, INK = "#ffd95a", "#f0b429", "#daa321", "#15120d"  # BEE_DARK is sampled from his wings
 RED, BLUE, PURPLE, GREEN, ORANGE, CYAN = "#da444b", "#1861da", "#7a3cff", "#3cb043", "#ff8a1f", "#2fb4e8"
 UP, DOWN = "#34d399", "#f87171"
 SLOT_COLORS = (BLUE, PURPLE, RED, GREEN, ORANGE, CYAN)
@@ -136,8 +138,19 @@ def Section(title: str) -> QVBoxLayout:
 
 
 def Pixmap(name: str, size: int) -> QPixmap:
-    return QPixmap(str(ASSETS / name)).scaled(size, size, Qt.AspectRatioMode.KeepAspectRatio,
-                                              Qt.TransformationMode.SmoothTransformation)
+    """`size` logical pixels, kept sharp on high-DPI screens (Windows at 125–150% scaling)."""
+    ratio = QApplication.instance().devicePixelRatio()
+    side = round(size * ratio)
+    pixmap = QPixmap(str(ASSETS / name)).scaled(side, side, Qt.AspectRatioMode.KeepAspectRatio,
+                                                Qt.TransformationMode.SmoothTransformation)
+    pixmap.setDevicePixelRatio(ratio)
+    return pixmap
+
+
+def AppIcon() -> QIcon:
+    """Bee Sid's .ico holds a head-only picture for the smallest sizes; Qt needs its ico plugin to read it."""
+    formats = {name.data().decode() for name in QImageReader.supportedImageFormats()}
+    return QIcon(str(ASSETS / ("icon.ico" if "ico" in formats else "icon.png")))
 
 
 def Skewed(box: QRectF, skew: float) -> QPolygonF:
@@ -415,12 +428,12 @@ class HeaderBar(QFrame):
 class Hero(QFrame):
     """Chipper's starry hero banner, with Bee Sid standing in the bottom-right corner in a gold glow."""
 
-    def __init__(self):
+    def __init__(self, art: int = 270):
         super().__init__()
         self.art = QLabel(self)
-        self.art.setPixmap(Pixmap("bee_sid.png", 270))
+        self.art.setPixmap(Pixmap("bee_sid.png", art))
         self.art.adjustSize()
-        self.setMinimumHeight(340)
+        self.setMinimumHeight(art + 70)
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
@@ -455,64 +468,76 @@ class Hero(QFrame):
 
 
 class Logo(QWidget):
-    """'RAPIER' as a bouncy game logo (a colour per letter, a white outline, a soft glow) with a gold DESK sticker."""
+    """'BEE SID' as a bouncy game logo: bee-striped letters in a black and white outline, a soft glow and a red
+    DESK sticker."""
 
-    COLORS = (RED, BLUE, GREEN, ORANGE, PURPLE, CYAN)
     TILT = (-7, 5, -4, 6, -5, 4)
     LIFT = (5, -3, 6, -4, 3, -2)
-    PAD = 26
 
-    def __init__(self, word: str = "RAPIER", size: int = 104):
+    def __init__(self, word: str = "BEE SID", size: int = 104):
         super().__init__()
+        self.zoom = size / 104  # outline, glow and sticker sizes were tuned at 104 px
+        pad = 26 * self.zoom
         font = Font(size, True)
         metrics = QFontMetricsF(font)
-        self.letters: list[tuple[QPainterPath, QColor]] = []
+        self.letters: list[tuple[QPainterPath, QTransform]] = []
         x, bounds = 0.0, QRectF()
-        for index, char in enumerate(word):
+        for char in word:
+            if char == " ":
+                x += metrics.horizontalAdvance(char)
+                continue
+            index = len(self.letters) % len(self.TILT)
             path = QPainterPath()
             path.addText(x, metrics.ascent(), font, char)
             mid = path.boundingRect().center()
-            turn = QTransform().translate(mid.x(), mid.y() + self.LIFT[index % 6])
-            turn.rotate(self.TILT[index % 6]).translate(-mid.x(), -mid.y())
-            path = turn.map(path)
-            self.letters.append((path, QColor(self.COLORS[index % 6])))
-            bounds = bounds.united(path.boundingRect())
+            turn = QTransform().translate(mid.x(), mid.y() + self.LIFT[index] * self.zoom)
+            turn.rotate(self.TILT[index]).translate(-mid.x(), -mid.y())
+            self.letters.append((path, turn))
+            bounds = bounds.united(turn.mapRect(path.boundingRect()))
             x += metrics.horizontalAdvance(char) + size * 0.07
-        self.origin = QPointF(self.PAD - bounds.left(), self.PAD - bounds.top())
-        self.tag_font = Font(max(18, size // 4), True, 5.0)
+        self.origin = QPointF(pad - bounds.left(), pad - bounds.top())
+        self.tag_font = Font(max(14, size // 4), True, 5.0 * self.zoom)
         tag = QFontMetricsF(self.tag_font)
-        self.tag = QRectF(0, 0, tag.horizontalAdvance("DESK") + 44, tag.height() + 12)
-        self.tag.moveTopRight(QPointF(self.PAD + bounds.width() + 8,
-                                      self.PAD + bounds.height() - self.tag.height() * 0.3))
-        self.setFixedSize(int(bounds.width() + 2 * self.PAD + 12), int(self.tag.bottom() + 10))
+        self.tag = QRectF(0, 0, tag.horizontalAdvance("DESK") + 44 * self.zoom, tag.height() + 12 * self.zoom)
+        self.tag.moveTopRight(QPointF(pad + bounds.width() + 8 * self.zoom,
+                                      pad + bounds.height() - self.tag.height() * 0.3))
+        self.setFixedSize(int(bounds.width() + 2 * pad + 12 * self.zoom), int(self.tag.bottom() + 10 * self.zoom))
+
+    @staticmethod
+    def Stripes(box: QRectF) -> QLinearGradient:
+        """Bee Sid's yellow with a black band across the middle, at the same height on every capital."""
+        fill = QLinearGradient(box.topLeft(), box.bottomLeft())
+        for at, color in ((0.0, BEE_LIGHT), (0.36, BEE), (0.361, INK), (0.6, INK), (0.601, BEE), (1.0, BEE_DARK)):
+            fill.setColorAt(at, QColor(color))
+        return fill
 
     def paintEvent(self, event) -> None:
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         p.save()
         p.translate(self.origin)
-        halo = QPainterPath()
-        for path, _ in self.letters:
-            halo.addPath(path)
         round_pen = (Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin)
+        halo = QPainterPath()
+        for path, turn in self.letters:
+            halo.addPath(turn.map(path))
         for width, alpha in ((46, 12), (34, 22), (26, 38)):
-            p.strokePath(halo, QPen(QColor(255, 255, 255, alpha), width, *round_pen))
-        for path, color in self.letters:
-            p.strokePath(path, QPen(QColor(WHITE), 14, *round_pen))
-            box = path.boundingRect()
-            shade = QLinearGradient(box.topLeft(), box.bottomLeft())
-            shade.setColorAt(0, color.lighter(135))
-            shade.setColorAt(1, color)
-            p.fillPath(path, shade)
+            p.strokePath(halo, QPen(QColor(255, 255, 255, alpha), width * self.zoom, *round_pen))
+        for path, turn in self.letters:
+            p.save()
+            p.setTransform(turn, True)  # the stripes tilt with each letter
+            p.strokePath(path, QPen(QColor(WHITE), 14 * self.zoom, *round_pen))
+            p.strokePath(path, QPen(QColor(INK), 6 * self.zoom, *round_pen))
+            p.fillPath(path, self.Stripes(path.boundingRect()))
+            p.restore()
         p.restore()
         center = self.tag.center()
         p.translate(center)
         p.rotate(-4)
         p.translate(-center)
-        p.setPen(QPen(QColor(NAVY), 3))
-        p.setBrush(QColor(GOLD))
-        p.drawPolygon(Skewed(self.tag, 12))
-        p.setPen(QColor(NAVY))
+        p.setPen(QPen(QColor(NAVY), 3 * self.zoom))
+        p.setBrush(QColor(RED))
+        p.drawPolygon(Skewed(self.tag, 12 * self.zoom))
+        p.setPen(QColor(WHITE))
         p.setFont(self.tag_font)
         p.drawText(self.tag, Qt.AlignmentFlag.AlignCenter, "DESK")
 
@@ -656,7 +681,7 @@ class Desk(QMainWindow):
         self.reports: list[Report] = []
         self.slot_cards: list[GamePanel] = []
         self.current: Report | None = None
-        self.setWindowTitle("Rapier Desk")
+        self.setWindowTitle("Bee Sid")
         self.resize(1240, 820)
         self.setMinimumSize(1000, 680)
 
@@ -685,7 +710,7 @@ class Desk(QMainWindow):
         emblem.setPixmap(Pixmap("icon.png", 42))
         row.addWidget(emblem)
         row.addSpacing(10)
-        row.addWidget(Text("Rapier Desk", 24, True, WHITE, wrap=False))
+        row.addWidget(Text("Bee Sid", 24, True, WHITE, wrap=False))
         row.addSpacing(30)
         self.nav = QButtonGroup(self)
         for index, (label, color) in enumerate((("Home", BLUE), ("Saved runs", PURPLE), ("New backtest", RED))):
@@ -767,8 +792,8 @@ class Desk(QMainWindow):
         outer.insertWidget(0, hero)
 
         center = Qt.AlignmentFlag.AlignHCenter
-        column.addLayout(Section("Read. Wait. Strike."))
-        column.addWidget(Text("Rapier Desk is Bee Sid's HQ for testing the Bias + OTE plan on real NQ history, "
+        column.addLayout(Section("Read. Wait. Sting."))
+        column.addWidget(Text("Welcome to Bee Sid's HQ, where the Bias + OTE plan gets tested on real NQ history "
                               "without risking a cent.".upper(), 20, True, WHITE, 0.6, center))
         column.addWidget(Text("Pick a period, press start and read the honest numbers: net P&L, win rate, "
                               "drawdown and every single trade.", 16, False, TEXT, align=center))
@@ -778,7 +803,7 @@ class Desk(QMainWindow):
         stack.setContentsMargins(0, 8, 0, 0)
         stack.setSpacing(14)
         stack.addWidget(Text(f"<span style='color:{STAR}'>★</span>&nbsp;&nbsp;REVIEWS", 14, True, WHITE, 2.0))
-        for quote, cite, score in (("“Best backtest desk on the planet.”", "(According to its protagonist)", ""),
+        for quote, cite, score in (("“Best backtest desk in the hive.”", "(According to its protagonist)", ""),
                                    ("“Can't place a real order even if you beg.”", "The safety rails", "100/10")):
             card = QFrame()
             card.setObjectName("review")
@@ -1166,7 +1191,7 @@ def _CloseSplash() -> None:
 
 def Main() -> None:
     app = QApplication(sys.argv)
-    app.setApplicationName("Rapier Desk")
+    app.setApplicationName("Bee Sid")
     app.setStyle("Fusion")
     hints = app.styleHints()
     if hasattr(hints, "setColorScheme"):
@@ -1175,9 +1200,11 @@ def Main() -> None:
     app.setFont(Font(14))
     app.setPalette(Palette())
     app.setStyleSheet(STYLE)
-    app.setWindowIcon(QIcon(str(ASSETS / "icon.png")))
+    app.setWindowIcon(AppIcon())
     bundle = Path(getattr(sys, "_MEIPASS", Path(sys.executable).parent)) if getattr(sys, "frozen", False) else None
     user_data = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation))
+    if bundle is not None:
+        AdoptOldHome(user_data)
     window = Desk(AppPaths(Path(__file__).resolve().parent.parent, bundle, user_data))
     if len(sys.argv) == 3 and sys.argv[1] == "--self-test":
         # Lets the build prove the packaged app starts, finds its example runs, saves outside the unpack folder,

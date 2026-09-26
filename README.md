@@ -1,10 +1,14 @@
 # Prop Firm Rapier
 
-## Desktop app: Rapier Desk (Windows and Linux)
+## Desktop app: Bee Sid (Windows and Linux)
 
-Rapier Desk is a double-click app for browsing saved backtests (equity, goal check, recent trades) and
+Bee Sid is a double-click app for browsing saved backtests (equity, goal check, recent trades) and
 running new ones without prompts or commands. **It has no live-trading or account features**; the
 two-switch live-order safeguard stays CLI-only.
+
+Bee Sid is the app; the engine underneath is still called **Rapier** (the rest of this README). Its
+`rapier` commands, `RAPIER_*` settings and order IDs keep that name on purpose, because live-order
+de-duplication and the real-orders safety switch depend on them.
 
 It is styled like Coolbrador's game pages: Chipper's slanted buttons, starfields and colour-coded tabs on
 LabradorSim's France-desk navy. Saved runs are save-slot cards, the home page has a leaderboard, and Bee Sid
@@ -12,34 +16,38 @@ talks you through a new run. The Cantarell font is bundled under the SIL Open Fo
 (`rapier/assets/fonts/OFL.txt`).
 
 **Get it.** On GitHub open **Actions → Desktop builds**, pick a green run on `main`, and download
-`RapierDesk-Windows` or `RapierDesk-Linux`. GitHub wraps downloads in a zip; inside is one file.
+`BeeSid-Windows` or `BeeSid-Linux`. GitHub wraps downloads in a zip; inside is one file.
 
-- **Windows:** `RapierDesk.exe`. Double-click it. It is unsigned, so SmartScreen may ask first
+- **Windows:** `BeeSid.exe`. Double-click it. It is unsigned, so SmartScreen may ask first
   (**More info → Run anyway**).
-- **Linux:** `RapierDesk`. Run `chmod +x RapierDesk` once (zip downloads drop the executable bit), then
+- **Linux:** `BeeSid`. Run `chmod +x BeeSid` once (zip downloads drop the executable bit), then
   open it. It is built on Ubuntu 24.04; on older distributions build it yourself (below).
 
 The app unpacks itself every time it starts, so a Bee Sid splash shows for a few seconds first.
 
 **Saved runs.** The example runs are built in and shown with readable names. Give a new backtest a name
 (capitals and spaces are fine) to keep it; leave the name blank to replace **Latest Run**. Your runs and
-the market-data cache live in `%LOCALAPPDATA%\RapierDesk` (Windows) or `~/.local/share/RapierDesk`
-(Linux); **Open runs folder** jumps there. To reuse market data you already downloaded with the CLI,
-copy the files from the repository's `data/` folder into that `data` folder.
+the market-data cache live in `%LOCALAPPDATA%\BeeSid` (Windows) or `~/.local/share/BeeSid` (Linux);
+**Open runs folder** jumps there. Runs saved by earlier Rapier Desk test builds are moved there on first
+start. To reuse market data you already downloaded with the CLI, copy the files from the repository's
+`data/` folder into that `data` folder.
 
 **Run from source or build the app yourself** (Python 3.11+, from the repository root):
 
 ```bash
 python -m pip install -e ".[desktop]"
-rapier-desktop                      # from source: runs are saved in results/
+bee-sid                             # from source: runs are saved in results/
 python -m pip install "pyinstaller>=6.10,<7"
-python tools/build_desktop.py       # -> dist/RapierDesk.exe on Windows, dist/RapierDesk on Linux
+python tools/build_desktop.py       # -> dist/BeeSid.exe on Windows, dist/BeeSid on Linux
 ```
 
 A build only runs on the kind of system it was made on (a Linux build is not a Windows `.exe`). The
 build script packs the example runs, adds the splash when `tkinter` is available, and finishes with a
 self-test that opens the app and runs the engine on made-up bars. On Ubuntu, Qt may also need
 `libegl1` and `libopengl0`.
+
+The icon and splash are drawn from Bee Sid's picture (`rapier/assets/bee_sid.png`); after changing it or
+the logo, run `python tools/make_art.py` to redraw them.
 
 > **New here (person or AI)? Read [`START_HERE.md`](START_HERE.md) first:** a 5-minute map of the project, its status and next steps.
 

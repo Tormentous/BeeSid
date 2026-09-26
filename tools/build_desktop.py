@@ -1,4 +1,4 @@
-"""Build Rapier Desk as one double-click file (RapierDesk.exe on Windows, RapierDesk on Linux) and self-test it.
+"""Build the Bee Sid app as one double-click file (BeeSid.exe on Windows, BeeSid on Linux) and self-test it.
 
 Run from the repository root after installing the desktop extras and PyInstaller:
 
@@ -20,7 +20,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-NAME = "RapierDesk"
+NAME = "BeeSid"
 
 
 def Samples() -> list[Path]:

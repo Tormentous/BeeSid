@@ -5,8 +5,9 @@ import os
 
 import pytest
 
-from rapier.desktop_data import (AppPaths, BacktestArgs, DisplayName, EngineCheck, EquityCurve, GoalLabel, GoalScore,
-                                 LoadReports, Money, NiceStep, Paths, Publish, RunFolder, Staging)
+from rapier.desktop_data import (AdoptOldHome, AppPaths, BacktestArgs, DisplayName, EngineCheck, EquityCurve,
+                                 GoalLabel, GoalScore, LoadReports, Money, NiceStep, Paths, Publish, RunFolder,
+                                 Staging)
 
 HEADING = "# Prop Firm Rapier | 2025-07-26 -> today | base 1h | prop | yahoo"
 
@@ -105,9 +106,20 @@ def TestExeKeepsRunsOutsideItsTemporaryFolder(tmp_path):
     source = AppPaths(tmp_path / "repo", None, tmp_path / "home")
     assert source == Paths(tmp_path / "repo" / "results", None, None)
     exe = AppPaths(tmp_path / "repo", tmp_path / "unpacked", tmp_path / "home")
-    assert exe.runs == tmp_path / "home" / "RapierDesk" / "results"
-    assert exe.data == tmp_path / "home" / "RapierDesk" / "data"
+    assert exe.runs == tmp_path / "home" / "BeeSid" / "results"
+    assert exe.data == tmp_path / "home" / "BeeSid" / "data"
     assert exe.samples == tmp_path / "unpacked" / "results"
+
+
+def TestRunsFromBeforeTheRenameCarryOver(tmp_path):
+    WriteRun(tmp_path / "RapierDesk" / "results" / "My Run")
+    AdoptOldHome(tmp_path)
+    assert (tmp_path / "BeeSid" / "results" / "My Run" / "summary.json").exists()
+    assert not (tmp_path / "RapierDesk").exists()
+    WriteRun(tmp_path / "RapierDesk" / "results" / "Newer")
+    AdoptOldHome(tmp_path)  # never merges into or replaces an existing Bee Sid folder
+    assert (tmp_path / "RapierDesk" / "results" / "Newer").exists()
+    assert not (tmp_path / "BeeSid" / "results" / "Newer").exists()
 
 
 def TestBacktestArgsCannotStartTrading(tmp_path):
@@ -137,6 +149,7 @@ def TestDeskShowsRunsAsSaveSlots(tmp_path, monkeypatch):
     WriteRun(tmp_path / "runs" / "oos_2024-06-15_to_2025-07-25")
     app = QApplication.instance() or QApplication([])
     desk = Desk(Paths(tmp_path / "runs", None, None))
+    assert desk.windowTitle() == "Bee Sid"
     assert [card.report.title for card in desk.slot_cards] == ["Out-of-Sample Test"]
     desk.slot_cards[0].clicked.emit()
     assert desk.pages.currentIndex() == 2
